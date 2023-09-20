@@ -2,24 +2,30 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
-	"os"
+	"net/http"
 	"strconv"
 )
 
-func main() {
-	fmt.Println("Enter the digits of the card")
+var tpl *template.Template
 
-	cardNum := ""
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	tpl.ExecuteTemplate(w, "index.html", nil)
+}
 
-	fmt.Fscanln(os.Stdin, &cardNum)
+func processGetHandler(w http.ResponseWriter, r *http.Request) {
+	cardNum := r.FormValue("cardNumber")
 
-	// read the number from console
+	fmt.Println(cardNum)
+
+	// read the number from string
 	digits := []int{}
 	counter := 0
 	for _, digitCh := range cardNum {
 		if digitCh >= '0' && digitCh <= '9' {
 			digit, err := strconv.Atoi(string(digitCh))
+			fmt.Println(digit)
 			if err != nil {
 				log.Fatal("Error: ", err)
 			}
@@ -31,6 +37,16 @@ func main() {
 			}
 		}
 	}
+
+	var res bool
+
+	if len(digits) != 16 {
+		res = false
+		tpl.ExecuteTemplate(w, "result.html", res)
+		return
+	}
+
+	fmt.Println(digits)
 
 	// luhn algo
 	sum := 0
@@ -46,12 +62,17 @@ func main() {
 		reverse = !reverse
 	}
 
-	// result
-	res := sum%10 == 0
+	res = sum%10 == 0
 
-	if res {
-		fmt.Println("the card number is valid")
-	} else {
-		fmt.Println("the card number is not valid")
-	}
+	fmt.Println(res)
+
+	tpl.ExecuteTemplate(w, "result.html", res)
+}
+
+func main() {
+	tpl, _ = template.ParseGlob("templates/*.html")
+
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/processGetHandler", processGetHandler)
+	http.ListenAndServe(":8080", nil)
 }
