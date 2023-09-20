@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -17,7 +16,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func processGetHandler(w http.ResponseWriter, r *http.Request) {
 	cardNum := r.FormValue("cardNumber")
 
-	fmt.Println(cardNum)
+	var res bool
 
 	// read the number from string
 	digits := []int{}
@@ -27,18 +26,17 @@ func processGetHandler(w http.ResponseWriter, r *http.Request) {
 			digit, err := strconv.Atoi(string(digitCh))
 			fmt.Println(digit)
 			if err != nil {
-				log.Fatal("Error: ", err)
+				http.Error(w, "invalid input", http.StatusBadRequest)
+				return
 			}
 			digits = append(digits, digit)
 			counter++
 		} else {
-			if counter > 16 {
-				log.Fatal("Error: the count of numbers is more than 16 (unavailable format)")
-			}
+			res = false
+			tpl.ExecuteTemplate(w, "result.html", res)
+			return
 		}
 	}
-
-	var res bool
 
 	if len(digits) != 16 {
 		res = false
